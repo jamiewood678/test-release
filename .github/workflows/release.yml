@@ -1,0 +1,41 @@
+name: "release"
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    types: [closed]
+
+jobs:
+  release:
+    if: ${{ github.event.pull_request.merged }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+
+      - name: Semantic Calendar Version
+        id: version
+        uses: lukashornych/semantic-calendar-version@1.0.3
+        with:
+          release-branch: main
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease: false
+          commitish: ${{ github.sha }}
+
+
